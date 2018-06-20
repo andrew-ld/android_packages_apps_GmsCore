@@ -29,8 +29,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.ServiceManager;
-import android.os.IDeviceIdleController
+import android.os.IDeviceIdleController;
 import android.os.Looper;
 import android.os.Messenger;
 import android.os.Parcelable;
@@ -168,7 +167,23 @@ public class McsService extends Service implements Handler.Callback {
         heartbeatIntent = PendingIntent.getService(this, 0, new Intent(ACTION_HEARTBEAT, null, this, McsService.class), 0);
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        mDeviceIdleController = IDeviceIdleController.Stub.asInterface(ServiceManager.getService(Context.DEVICE_IDLE_CONTROLLER));
+        if(mDeviceIdleController == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                java.lang.reflect.Method method = Class.forName("android.os.ServiceManager").getMethod("getService", String.class);
+                IBinder binder = (IBinder) method.invoke(null, "Context.DEVICE_IDLE_CONTROLLER");
+                if(binder != null)
+                    mDeviceIdleController = IDeviceIdleController.Stub.asInterface(binder);
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (java.lang.reflect.InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+
         synchronized (McsService.class) {
             if (handlerThread == null) {
                 handlerThread = new HandlerThread();
@@ -479,8 +494,14 @@ public class McsService extends Service implements Handler.Callback {
             for (ResolveInfo resolveInfo : infos) {
                 logd("Target: " + resolveInfo);
                 Intent targetIntent = new Intent(intent);
-                //TODO: Find out userID
-                mDeviceIdleController.addPowerSaveTempWhitelistApp(resolveInfo.activityInfo.packageName, 10000, 0, "GCM Push");
+                // ToDO: Find out userID
+                if(mDeviceIdleController != null) {
+                    try {
+                        mDeviceIdleController.addPowerSaveTempWhitelistApp(resolveInfo.activityInfo.packageName, 10000, 0, "GCM Push");
+                    } catch (android.os.RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
                 targetIntent.setComponent(new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name));
                 sendOrderedBroadcast(targetIntent, msg.category + ".permission.C2D_MESSAGE");
             }
