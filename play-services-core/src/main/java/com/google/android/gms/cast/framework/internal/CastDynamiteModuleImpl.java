@@ -27,7 +27,11 @@ import com.google.android.gms.cast.framework.ICastSession;
 import com.google.android.gms.cast.framework.IReconnectionService;
 import com.google.android.gms.cast.framework.ISession;
 import com.google.android.gms.cast.framework.ISessionManager;
+import com.google.android.gms.cast.framework.ISessionManagerListener;
 import com.google.android.gms.cast.framework.ISessionProxy;
+import com.google.android.gms.cast.framework.IAppVisibilityListener;
+import com.google.android.gms.cast.framework.ICastStateListener;
+import com.google.android.gms.cast.framework.IDiscoveryManager;
 import com.google.android.gms.cast.framework.media.CastMediaOptions;
 import com.google.android.gms.cast.framework.media.IMediaNotificationService;
 import com.google.android.gms.cast.framework.media.internal.IFetchBitmapTask;
@@ -46,9 +50,27 @@ public class CastDynamiteModuleImpl extends ICastDynamiteModule.Stub {
         return new ICastContext.Stub() {
 
             @Override
+            public IDiscoveryManager getDiscoveryManagerImpl() throws RemoteException {
+                Log.d(TAG, "unimplemented Method: getDiscoveryManagerImpl");
+		return null;
+            }
+
+            @Override
+            public ISessionManager getSessionManagerImpl() throws RemoteException {
+                Log.d(TAG, "unimplemented Method: getSessionManagerImpl");
+		return null;
+            }
+
+            @Override
             public Bundle getMergedSelectorAsBundle() throws RemoteException {
                 Log.d(TAG, "unimplemented Method: getMergedSelectorAsBundle");
                 return new Bundle();
+            }
+
+            @Override
+            public IObjectWrapper getWrappedThis() throws RemoteException {
+                Log.d(TAG, "unimplemented Method: getWrappedThis");
+                return ObjectWrapper.wrap(this);
             }
 
             @Override
@@ -58,6 +80,15 @@ public class CastDynamiteModuleImpl extends ICastDynamiteModule.Stub {
             }
 
             @Override
+            public void addVisibilityChangeListener(IAppVisibilityListener a) throws RemoteException {
+                Log.d(TAG, "unimplemented Method: addVisibilityChangeListener");
+            }
+
+            @Override
+            public void removeVisibilityChangeListener(IAppVisibilityListener a) throws RemoteException {
+                Log.d(TAG, "unimplemented Method: removeVisibilityChangeListener");
+            }
+
             public ISessionManager getSessionManager() throws RemoteException {
                 Log.d(TAG, "unimplemented Method: getSessionManager");
                 return new ISessionManager.Stub(){
@@ -68,9 +99,34 @@ public class CastDynamiteModuleImpl extends ICastDynamiteModule.Stub {
                     }
 
                     @Override
+                    public void addCastStateListener(ICastStateListener a) throws RemoteException {
+                        Log.d(TAG, "unimplemented Method: addCastStateListener");
+                    }
+
+                    @Override
+                    public void removeCastStateListener(ICastStateListener a) throws RemoteException {
+                        Log.d(TAG, "unimplemented Method: removeCastStateListener");
+                    }
+
+                    @Override
+                    public void addSessionManagerListener(ISessionManagerListener a) throws RemoteException {
+                        Log.d(TAG, "unimplemented Method: addSessionManagerListener");
+                    }
+
+                    @Override
+                    public void removeSessionManagerListener(ISessionManagerListener a) throws RemoteException {
+                        Log.d(TAG, "unimplemented Method: removeSessionManagerListener");
+                    }
+
+                    @Override
                     public void endCurrentSession(boolean b, boolean stopCasting) throws RemoteException {
                         Log.d(TAG, "unimplemented Method: endCurrentSession");
+                    }
 
+                    @Override
+                    public int getCastState() throws RemoteException {
+                        Log.d(TAG, "unimplemented Method: getCastState");
+			return 0;
                     }
 
                     @Override
@@ -78,6 +134,13 @@ public class CastDynamiteModuleImpl extends ICastDynamiteModule.Stub {
                         Log.d(TAG, "unimplemented Method: getWrappedThis");
                         return ObjectWrapper.wrap(this);
                     }
+
+                    @Override
+                    public void startSession(Bundle a) throws RemoteException {
+                        Log.d(TAG, "unimplemented Method: startSession");
+                    }
+
+
                 };
             }
 
@@ -98,6 +161,11 @@ public class CastDynamiteModuleImpl extends ICastDynamiteModule.Stub {
                 Log.d(TAG, "unimplemented Method: onActivityPaused");
 
             }
+
+            @Override
+            public void setReceiverApplicationId(String a, Map b) throws RemoteException {
+                Log.d(TAG, "unimplemented Method: setReceiverApplicationId");
+            }
         };
     }
 
@@ -105,6 +173,90 @@ public class CastDynamiteModuleImpl extends ICastDynamiteModule.Stub {
     public ISession newSessionImpl(String s1, String s2, ISessionProxy proxy) throws RemoteException {
         Log.d(TAG, "unimplemented Method: newSessionImpl");
         return new ISession.Stub() {
+
+             @Override
+             public String getCategory() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: getCategory");
+                 return "";
+             }
+
+             @Override
+             public String getSessionId() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: getSessionId");
+                 return "";
+             }
+
+             @Override
+             public void notifyFailedToResumeSession(int error) throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: notifyFailedToResumeSession");
+             }
+
+             @Override
+             public void notifyFailedToStartSession(int error) throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: notifyFailedToStartSession");
+             }
+
+             @Override
+             public void notifySessionEnded(int error) throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: notifySessionEnded");
+             }
+
+             @Override
+             public void notifySessionResumed(boolean wasSuspended) throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: notifySessionResumed");
+             }
+
+             @Override
+             public void notifySessionStarted(String sessionId) throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: notifySessionStarted");
+             }
+
+             @Override
+             public void notifySessionSuspended(int reason) throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: notifySessionSuspended");
+             }
+
+             @Override
+             public boolean isConnected() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: isConnected");
+                 return false;
+             }
+
+             @Override
+             public boolean isConnecting() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: isConnecting");
+                 return false;
+             }
+
+             @Override
+             public boolean isDisconnected() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: isDisconnected");
+                 return false;
+             }
+
+             @Override
+             public boolean isDisconnecting() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: isDisconnecting");
+                 return false;
+             }
+
+             @Override
+             public boolean isSuspended() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: isSuspended");
+		 return false;
+             }
+
+             @Override
+             public boolean isResuming() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: isResuming");
+                 return false;
+             }
+
+             @Override
+             public IObjectWrapper getWrappedObject() throws RemoteException {
+                 Log.d(TAG, "unimplemented Method: getWrappedObject");
+                 return ObjectWrapper.wrap(this);
+             }
         };
     }
 
