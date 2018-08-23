@@ -17,6 +17,10 @@ What's different compared to the original microG GmsCore?
 * fix for [microG issue #560 by ale5000](https://github.com/ale5000-git/android_packages_apps_GmsCore/commits/patch-1)
 * temporarily put applications into whitelist when high-priority GCM messages are received, by [ale5000 and ccaapton](https://github.com/ale5000-git/android_packages_apps_GmsCore/commits/master)
 
+### Download
+
+The latest build can be downloaded [here](https://www.nanolx.org/apk/GmsCore.apk)
+
 ### Please refer to the [wiki](https://github.com/microg/android_packages_apps_GmsCore) for the original source
 
 License
