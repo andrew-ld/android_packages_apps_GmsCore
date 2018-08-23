@@ -1,11 +1,11 @@
-<img src="http://i.imgur.com/hXY4lcC.png" height="42px" alt="microG" /> Services Core (GmsCore)
+<img src="http://i.imgur.com/hXY4lcC.png" height="42px" alt="microG" /> Services Core (GmsCore) [NanoDroid]
 =======
-[![Build Status](https://travis-ci.org/microg/android_packages_apps_GmsCore.svg?branch=master)](https://travis-ci.org/microg/android_packages_apps_GmsCore)
+
+This is the [NanoDroid](https://gitlab.com/Nanolx/NanoDroid) fork of:
 
 microG GmsCore is a FLOSS (Free/Libre Open Source Software) framework to allow applications designed for Google Play Services to run on systems, where Play Services is not available.
 
-### Please refer to the [wiki](https://github.com/microg/android_packages_apps_GmsCore/wiki) for downloads and instructions
-
+### Please refer to the [wiki](https://github.com/microg/android_packages_apps_GmsCore) for the original source
 
 License
 -------
