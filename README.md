@@ -5,6 +5,18 @@ This is the [NanoDroid](https://gitlab.com/Nanolx/NanoDroid) fork of:
 
 microG GmsCore is a FLOSS (Free/Libre Open Source Software) framework to allow applications designed for Google Play Services to run on systems, where Play Services is not available.
 
+### Changes
+
+What's different compared to the original microG GmsCore?
+
+* newer spoofed Play Services version
+  * currently: 12.8.74
+  * solves the 'Please update Play Services'-nag some applications would otherwise give you
+* built as priv-app
+* built with [ThibG's fork of microG DroidGuard Helper](https://github.com/ThibG/android_packages_apps_RemoteDroidGuard)
+* fix for [microG issue #560 by ale5000](https://github.com/ale5000-git/android_packages_apps_GmsCore/commits/patch-1)
+* temporarily put applications into whitelist when high-priority GCM messages are received, by [ale5000 and ccaapton](https://github.com/ale5000-git/android_packages_apps_GmsCore/commits/master)
+
 ### Please refer to the [wiki](https://github.com/microg/android_packages_apps_GmsCore) for the original source
 
 License
