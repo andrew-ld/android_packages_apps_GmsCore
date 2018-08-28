@@ -12,7 +12,7 @@
 	url = https://github.com/microg/android_external_GmsLib.git
 [submodule "extern/vtm"]
 	path = extern/vtm
-	url = https://github.com/mapsforge/vtm.git
+	url = https://github.com/microg/android_external_vtm.git
 	ignore = all
 [submodule "extern/RemoteDroidGuard"]
 	path = extern/RemoteDroidGuard
