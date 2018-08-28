@@ -23,6 +23,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.PermissionInfo;
 import android.content.pm.ResolveInfo;
 import android.net.ConnectivityManager;
 import android.os.Build;
@@ -493,6 +494,15 @@ public class McsService extends Service implements Handler.Callback {
             intent.putExtra(appData.key, appData.value);
         }
 
+        String receiverPermission;
+        try {
+            String name = msg.category + ".permission.C2D_MESSAGE";
+            getPackageManager().getPermissionInfo(name, 0);
+            receiverPermission = name;
+        } catch (PackageManager.NameNotFoundException e) {
+            receiverPermission = null;
+        }
+
         List<ResolveInfo> infos = getPackageManager().queryBroadcastReceivers(intent, PackageManager.GET_RESOLVED_FILTER);
         if (infos == null || infos.isEmpty()) {
             logd("No target for message, wut?");
@@ -509,7 +519,7 @@ public class McsService extends Service implements Handler.Callback {
                     }
                 }
                 targetIntent.setComponent(new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name));
-                sendOrderedBroadcast(targetIntent, msg.category + ".permission.C2D_MESSAGE");
+                sendOrderedBroadcast(targetIntent, receiverPermission);
             }
         }
     }
