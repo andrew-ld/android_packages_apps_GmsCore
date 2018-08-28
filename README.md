@@ -9,9 +9,6 @@ microG GmsCore is a FLOSS (Free/Libre Open Source Software) framework to allow a
 
 What's different compared to the original microG GmsCore?
 
-* newer spoofed Play Services version
-  * currently: 12.8.74
-  * solves the 'Please update Play Services'-nag some applications would otherwise give you
 * built as priv-app
 * built with [ThibG's fork of microG DroidGuard Helper](https://github.com/ThibG/android_packages_apps_RemoteDroidGuard)
 * fix for [microG issue #560 by ale5000](https://github.com/ale5000-git/android_packages_apps_GmsCore/commits/patch-1)
