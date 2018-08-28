@@ -13,6 +13,7 @@
 [submodule "extern/vtm"]
 	path = extern/vtm
 	url = https://github.com/mapsforge/vtm.git
+	ignore = all
 [submodule "extern/RemoteDroidGuard"]
 	path = extern/RemoteDroidGuard
 	url = https://github.com/ThibG/android_packages_apps_RemoteDroidGuard.git
