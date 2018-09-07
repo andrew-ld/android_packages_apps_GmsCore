@@ -10,6 +10,7 @@ microG GmsCore is a FLOSS (Free/Libre Open Source Software) framework to allow a
 What's different compared to the original microG GmsCore?
 
 * built as priv-app
+* added Google Contacts to KNOWN_GOOGLE_PACKAGES
 * built with [ThibG's fork of microG DroidGuard Helper](https://github.com/ThibG/android_packages_apps_RemoteDroidGuard)
 * fix for [microG issue #560 by ale5000](https://github.com/ale5000-git/android_packages_apps_GmsCore/commits/patch-1)
 * temporarily put applications into whitelist when high-priority GCM messages are received, by [ale5000 and ccaapton](https://github.com/ale5000-git/android_packages_apps_GmsCore/commits/master)
