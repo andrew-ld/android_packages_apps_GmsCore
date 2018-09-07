@@ -510,6 +510,7 @@ public class McsService extends Service implements Handler.Callback {
             for (ResolveInfo resolveInfo : infos) {
                 logd("Target: " + resolveInfo);
                 Intent targetIntent = new Intent(intent);
+
                 // ToDO: Find out userID
                 if(mDeviceIdleController != null) {
                     try {
@@ -518,6 +519,8 @@ public class McsService extends Service implements Handler.Callback {
                         e.printStackTrace();
                     }
                 }
+
+                targetIntent.setPackage(msg.category);
                 targetIntent.setComponent(new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name));
                 sendOrderedBroadcast(targetIntent, receiverPermission);
             }
