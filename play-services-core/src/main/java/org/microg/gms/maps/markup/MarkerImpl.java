@@ -271,14 +271,17 @@ public class MarkerImpl extends IMarkerDelegate.Stub implements MarkerItemMarkup
     public void setZIndex(float zIndex) {
         options.zIndex(zIndex);
     }
+
     @Override
     public float getZIndex() {
         return options.getZIndex();
     }
+
     @Override
     public void setTag(IObjectWrapper obj) {
         this.tag = obj;
     }
+
     @Override
     public IObjectWrapper getTag() {
         return this.tag == null ? ObjectWrapper.wrap(null) : this.tag;
