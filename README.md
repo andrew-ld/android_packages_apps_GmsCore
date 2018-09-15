@@ -13,7 +13,9 @@ What's different compared to the original microG GmsCore?
 * added Google Contacts to KNOWN_GOOGLE_PACKAGES
 * fix build failing due missing com.vividsolutions:jts
 * fix build issues [by FreeMobileOS](https://github.com/FreeMobileOS/android_packages_apps_GmsCore/commit/95e839146d4f65a3ee2455a14f138514f2683124)
-* fix for [microG issues #444 and #598 by voidstarstar](https://github.com/voidstarstar/android_packages_apps_GmsCore/commit/906b1f9c9e353288a5ca777bd0494560b60c5930)
+* fix for [microG issues #444 and #598 by [voidstarstar](https://github.com/voidstarstar/android_packages_apps_GmsCore/commit/906b1f9c9e353288a5ca777bd0494560b60c5930)
+* add tag support and implement Z-Index API, likely fixes microG issues #591, #525, #489, #388 by armills [GmsCore](https://github.com/armills/android_packages_apps_GmsCore/tree/marker-support), [GmsApi](https://github.com/armills/android_external_GmsApi/tree/marker-support)
+* Cast API work by armills [GmsCore](https://github.com/armills/android_packages_apps_GmsCore/tree/cast-mvp), [GmsApi](https://github.com/armills/android_external_GmsApi/tree/cast-mvp)
 * set package of intent prior to broadcasting [by voidstarstar](https://github.com/voidstarstar/android_packages_apps_GmsCore/commit/6c1a479bb10229512183351133f1df43c4297236) 
 * built with [ThibG's fork of microG DroidGuard Helper](https://github.com/ThibG/android_packages_apps_RemoteDroidGuard)
 * fix for [microG issue #560 by ale5000](https://github.com/ale5000-git/android_packages_apps_GmsCore/commits/patch-1)
