@@ -58,6 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.ACCESS_BACKGROUND_LOCATION;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static org.microg.gms.location.LocationConstants.EXTRA_PRIMARY_COLOR;
 import static org.microg.gms.location.LocationConstants.EXTRA_PRIMARY_COLOR_DARK;
@@ -107,7 +108,7 @@ PlacePickerActivity extends AppCompatActivity /*implements Map.UpdateListener*/ 
 //            mapView.map().getMapPosition(mp);
         } else {
             if (ActivityCompat.checkSelfPermission(PlacePickerActivity.this, ACCESS_FINE_LOCATION) != PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(PlacePickerActivity.this, new String[]{ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION}, 0);
+                ActivityCompat.requestPermissions(PlacePickerActivity.this, new String[]{ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION, ACCESS_BACKGROUND_LOCATION}, 0);
             } else {
                 updateMapFromLocationManager();
             }

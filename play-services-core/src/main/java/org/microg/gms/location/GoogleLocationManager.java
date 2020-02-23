@@ -36,6 +36,7 @@ import java.util.List;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.ACCESS_BACKGROUND_LOCATION;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.location.LocationManager.GPS_PROVIDER;
 import static android.location.LocationManager.NETWORK_PROVIDER;
@@ -108,6 +109,10 @@ public class GoogleLocationManager implements LocationChangeListener {
 
     private boolean hasFineLocationPermission() {
         return context.checkCallingPermission(ACCESS_FINE_LOCATION) == PERMISSION_GRANTED;
+    }
+
+    private boolean hasBackgroundLocationPermission() {
+        return context.checkCallingPermission(ACCESS_BACKGROUND_LOCATION) == PERMISSION_GRANTED;
     }
 
     private boolean hasMockLocationPermission() {
