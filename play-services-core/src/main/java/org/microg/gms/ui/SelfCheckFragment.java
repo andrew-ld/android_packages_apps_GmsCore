@@ -35,6 +35,7 @@ import org.microg.tools.ui.AbstractSettingsActivity;
 import java.util.List;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_BACKGROUND_LOCATION;
 import static android.Manifest.permission.GET_ACCOUNTS;
 import static android.Manifest.permission.READ_PHONE_STATE;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
@@ -48,7 +49,7 @@ public class SelfCheckFragment extends AbstractSelfCheckFragment {
         checks.add(new RomSpoofSignatureChecks());
         checks.add(new InstalledPackagesChecks());
         if (SDK_INT > LOLLIPOP_MR1) {
-            checks.add(new PermissionCheckGroup(ACCESS_COARSE_LOCATION, WRITE_EXTERNAL_STORAGE, GET_ACCOUNTS, READ_PHONE_STATE));
+            checks.add(new PermissionCheckGroup(ACCESS_COARSE_LOCATION, ACCESS_BACKGROUND_LOCATION, WRITE_EXTERNAL_STORAGE, GET_ACCOUNTS, READ_PHONE_STATE));
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checks.add(new SystemChecks());
