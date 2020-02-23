@@ -549,19 +549,6 @@ public class McsService extends Service implements Handler.Callback {
             for (ResolveInfo resolveInfo : infos) {
                 logd("Target: " + resolveInfo);
                 Intent targetIntent = new Intent(intent);
-<<<<<<< HEAD
-
-                // ToDO: Find out userID
-                if(mDeviceIdleController != null) {
-                    try {
-                        mDeviceIdleController.addPowerSaveTempWhitelistApp(resolveInfo.activityInfo.packageName, 10000, 0, "GCM Push");
-                    } catch (android.os.RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                targetIntent.setPackage(msg.category);
-=======
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && app.wakeForDelivery) {
                     try {
                         if (getUserIdMethod != null && addPowerSaveTempWhitelistAppMethod != null && deviceIdleController != null) {
@@ -573,7 +560,6 @@ public class McsService extends Service implements Handler.Callback {
                         Log.w(TAG, e);
                     }
                 }
->>>>>>> db4bb568e1e4f4eb11aee4546abb00aacee20038
                 targetIntent.setComponent(new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name));
                 sendOrderedBroadcast(targetIntent, receiverPermission);
             }
