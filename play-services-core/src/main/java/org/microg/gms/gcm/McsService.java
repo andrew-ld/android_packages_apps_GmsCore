@@ -17,13 +17,15 @@
 package org.microg.gms.gcm;
 
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.PermissionInfo;
 import android.content.pm.ResolveInfo;
 import android.net.ConnectivityManager;
 import android.os.Build;
@@ -36,12 +38,15 @@ import android.os.Messenger;
 import android.os.Parcelable;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.os.UserHandle;
+import android.support.annotation.RequiresApi;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
 import com.squareup.wire.Message;
 
 import org.microg.gms.checkin.LastCheckinInfo;
+import org.microg.gms.common.ForegroundServiceContext;
 import org.microg.gms.common.PackageUtils;
 import org.microg.gms.gcm.mcs.AppData;
 import org.microg.gms.gcm.mcs.Close;
@@ -53,6 +58,8 @@ import org.microg.gms.gcm.mcs.LoginResponse;
 import org.microg.gms.gcm.mcs.Setting;
 
 import java.io.Closeable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,6 +71,7 @@ import okio.ByteString;
 
 import static android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP;
 import static android.os.Build.VERSION.SDK_INT;
+import static org.microg.gms.common.ForegroundServiceContext.EXTRA_FOREGROUND;
 import static org.microg.gms.gcm.GcmConstants.ACTION_C2DM_RECEIVE;
 import static org.microg.gms.gcm.GcmConstants.EXTRA_APP;
 import static org.microg.gms.gcm.GcmConstants.EXTRA_COLLAPSE_KEY;
@@ -134,6 +142,10 @@ public class McsService extends Service implements Handler.Callback {
 
     private static int maxTtl = 24 * 60 * 60;
 
+    private Object deviceIdleController;
+    private Method getUserIdMethod;
+    private Method addPowerSaveTempWhitelistAppMethod;
+
     private class HandlerThread extends Thread {
 
         public HandlerThread() {
@@ -168,23 +180,27 @@ public class McsService extends Service implements Handler.Callback {
         heartbeatIntent = PendingIntent.getService(this, 0, new Intent(ACTION_HEARTBEAT, null, this, McsService.class), 0);
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        if(mDeviceIdleController == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission("android.permission.CHANGE_DEVICE_IDLE_TEMP_WHITELIST") == PackageManager.PERMISSION_GRANTED) {
             try {
-                java.lang.reflect.Method method = Class.forName("android.os.ServiceManager").getMethod("getService", String.class);
-                IBinder binder = (IBinder) method.invoke(null, "Context.DEVICE_IDLE_CONTROLLER");
-                if(binder != null)
-                    mDeviceIdleController = IDeviceIdleController.Stub.asInterface(binder);
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (java.lang.reflect.InvocationTargetException e) {
-                e.printStackTrace();
+                String deviceIdleControllerName = "deviceidle";
+                try {
+                    Field field = Context.class.getField("DEVICE_IDLE_CONTROLLER");
+                    deviceIdleControllerName = (String) field.get(null);
+                } catch (Exception ignored) {
+                }
+                IBinder binder = (IBinder) Class.forName("android.os.ServiceManager")
+                        .getMethod("getService", String.class).invoke(null, deviceIdleControllerName);
+                if (binder != null) {
+                    deviceIdleController = Class.forName("android.os.IDeviceIdleController$Stub")
+                            .getMethod("asInterface", IBinder.class).invoke(null, binder);
+                    getUserIdMethod = UserHandle.class.getMethod("getUserId", int.class);
+                    addPowerSaveTempWhitelistAppMethod = deviceIdleController.getClass()
+                            .getMethod("addPowerSaveTempWhitelistApp", String.class, long.class, int.class, String.class);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, e);
             }
         }
-
         synchronized (McsService.class) {
             if (handlerThread == null) {
                 handlerThread = new HandlerThread();
@@ -236,8 +252,12 @@ public class McsService extends Service implements Handler.Callback {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(ALARM_SERVICE);
         long delay = getCurrentDelay();
         logd("Scheduling reconnect in " + delay / 1000 + " seconds...");
-        alarmManager.set(ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + delay,
-                PendingIntent.getBroadcast(context, 1, new Intent(ACTION_RECONNECT, null, context, TriggerReceiver.class), 0));
+        PendingIntent pi = PendingIntent.getBroadcast(context, 1, new Intent(ACTION_RECONNECT, null, context, TriggerReceiver.class), 0);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + delay, pi);
+        } else {
+            alarmManager.set(ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + delay, pi);
+        }
     }
 
     public void scheduleHeartbeat(Context context) {
@@ -248,13 +268,16 @@ public class McsService extends Service implements Handler.Callback {
             closeAll();
         }
         logd("Scheduling heartbeat in " + heartbeatMs / 1000 + " seconds...");
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            alarmManager.set(ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + heartbeatMs, heartbeatIntent);
-        } else {
-            // with KitKat, the alarms become inexact by default, but with the newly available setWindow we can get inexact alarms with guarantees.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // This is supposed to work even when running in idle and without battery optimization disabled
+            alarmManager.setExactAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + heartbeatMs, heartbeatIntent);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            // With KitKat, the alarms become inexact by default, but with the newly available setWindow we can get inexact alarms with guarantees.
             // Schedule the alarm to fire within the interval [heartbeatMs/3*4, heartbeatMs]
             alarmManager.setWindow(ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + heartbeatMs / 4 * 3, heartbeatMs / 4,
                     heartbeatIntent);
+        } else {
+            alarmManager.set(ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + heartbeatMs, heartbeatIntent);
         }
 
     }
@@ -273,6 +296,7 @@ public class McsService extends Service implements Handler.Callback {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        ForegroundServiceContext.completeForegroundService(this, intent, TAG);
         synchronized (McsService.class) {
             if (rootHandler != null) {
                 if (intent == null) return START_REDELIVER_INTENT;
@@ -293,6 +317,19 @@ public class McsService extends Service implements Handler.Callback {
             }
         }
         return START_REDELIVER_INTENT;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private Notification buildForegroundNotification() {
+        NotificationChannel channel = new NotificationChannel("foreground-service", "Foreground Service", NotificationManager.IMPORTANCE_LOW);
+        channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+        channel.setShowBadge(false);
+        getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        return new Notification.Builder(this, channel.getId())
+                .setOngoing(true)
+                .setContentTitle("Running in background")
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .build();
     }
 
     private void handleSendMessage(Intent intent) {
@@ -477,13 +514,15 @@ public class McsService extends Service implements Handler.Callback {
     }
 
     private void handleAppMessage(DataMessageStanza msg) {
-        database.noteAppMessage(msg.category, msg.getSerializedSize());
-        GcmDatabase.App app = database.getApp(msg.category);
+        String packageName = msg.category;
+        database.noteAppMessage(packageName, msg.getSerializedSize());
+        GcmDatabase.App app = database.getApp(packageName);
 
         Intent intent = new Intent();
         intent.setAction(ACTION_C2DM_RECEIVE);
-        intent.setPackage(msg.category);
+        intent.setPackage(packageName);
         intent.putExtra(EXTRA_FROM, msg.from);
+        intent.putExtra(EXTRA_MESSAGE_ID, msg.id);
         if (app.wakeForDelivery) {
             intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
         } else {
@@ -496,7 +535,7 @@ public class McsService extends Service implements Handler.Callback {
 
         String receiverPermission;
         try {
-            String name = msg.category + ".permission.C2D_MESSAGE";
+            String name = packageName + ".permission.C2D_MESSAGE";
             getPackageManager().getPermissionInfo(name, 0);
             receiverPermission = name;
         } catch (PackageManager.NameNotFoundException e) {
@@ -510,6 +549,7 @@ public class McsService extends Service implements Handler.Callback {
             for (ResolveInfo resolveInfo : infos) {
                 logd("Target: " + resolveInfo);
                 Intent targetIntent = new Intent(intent);
+<<<<<<< HEAD
 
                 // ToDO: Find out userID
                 if(mDeviceIdleController != null) {
@@ -521,6 +561,19 @@ public class McsService extends Service implements Handler.Callback {
                 }
 
                 targetIntent.setPackage(msg.category);
+=======
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && app.wakeForDelivery) {
+                    try {
+                        if (getUserIdMethod != null && addPowerSaveTempWhitelistAppMethod != null && deviceIdleController != null) {
+                            int userId = (int) getUserIdMethod.invoke(null, getPackageManager().getApplicationInfo(packageName, 0).uid);
+                            logd("Adding app " + packageName + " for userId " + userId + " to the temp whitelist");
+                            addPowerSaveTempWhitelistAppMethod.invoke(deviceIdleController, packageName, 10000, userId, "GCM Push");
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, e);
+                    }
+                }
+>>>>>>> db4bb568e1e4f4eb11aee4546abb00aacee20038
                 targetIntent.setComponent(new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name));
                 sendOrderedBroadcast(targetIntent, receiverPermission);
             }

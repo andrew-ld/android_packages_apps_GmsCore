@@ -16,6 +16,7 @@
 
 package org.microg.gms.common;
 
+import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -30,6 +31,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static android.os.Build.VERSION.SDK_INT;
@@ -60,10 +62,26 @@ public class PackageUtils {
         KNOWN_GOOGLE_PACKAGES.put("com.google.android.contacts", "ee3e2b5d95365c5a1ccc2d8dfe48d94eb33b3ebe");
         KNOWN_GOOGLE_PACKAGES.put("com.waze", "35b438fe1bc69d975dc8702dc16ab69ebf65f26f");
         KNOWN_GOOGLE_PACKAGES.put("com.google.android.apps.wellbeing", "4ebdd02380f1fa0b6741491f0af35625dba76e9f");
+        KNOWN_GOOGLE_PACKAGES.put("com.google.android.apps.village.boond", "48e7985b8f901df335b5d5223579c81618431c7b");
+        KNOWN_GOOGLE_PACKAGES.put("com.google.android.apps.subscriptions.red", "de8304ace744ae4c4e05887a27a790815e610ff0");
+        KNOWN_GOOGLE_PACKAGES.put("com.google.android.apps.meetings", "47a6936b733dbdb45d71997fbe1d610eca36b8bf");
     }
 
     public static boolean isGooglePackage(Context context, String packageName) {
         String signatureDigest = firstSignatureDigest(context, packageName);
+        return isGooglePackage(packageName, signatureDigest);
+    }
+
+    public static boolean isGooglePackage(PackageManager packageManager, String packageName) {
+        String signatureDigest = firstSignatureDigest(packageManager, packageName);
+        return isGooglePackage(packageName, signatureDigest);
+    }
+
+    public static boolean isGooglePackage(String packageName, byte[] bytes) {
+        return isGooglePackage(packageName, sha1sum(bytes));
+    }
+
+    public static boolean isGooglePackage(String packageName, String signatureDigest) {
         if (signatureDigest == null) return false;
         if (Arrays.asList(GOOGLE_PRIMARY_KEYS).contains(signatureDigest)) return true;
         if (!KNOWN_GOOGLE_PACKAGES.containsKey(packageName)) return false;
@@ -87,22 +105,16 @@ public class PackageUtils {
     }
 
     public static void checkPackageUid(Context context, String packageName, int callingUid) {
-        String[] packagesForUid = context.getPackageManager().getPackagesForUid(callingUid);
-        if (packagesForUid != null && !Arrays.asList(packagesForUid).contains(packageName)) {
-            throw new SecurityException("callingUid [" + callingUid + "] is not related to packageName [" + packageName + "]");
-        }
-    }
-
-    public static void checkPackageUid(Context context, String packageName, int callerUid, int callingUid) {
-        if (callerUid != 0 && callerUid != callingUid) {
-            throw new SecurityException("callerUid [" + callerUid + "] and real calling uid [" + callingUid + "] mismatch!");
-        }
-        checkPackageUid(context, packageName, callingUid);
+        getAndCheckPackage(context, packageName, callingUid, 0);
     }
 
     @Nullable
     public static String firstSignatureDigest(Context context, String packageName) {
-        PackageManager packageManager = context.getPackageManager();
+        return firstSignatureDigest(context.getPackageManager(), packageName);
+    }
+
+    @Nullable
+    public static String firstSignatureDigest(PackageManager packageManager, String packageName) {
         final PackageInfo info;
         try {
             info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES);
@@ -116,6 +128,92 @@ public class PackageUtils {
                     return digest;
                 }
             }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static String getCallingPackage(Context context) {
+        int callingUid = Binder.getCallingUid(), callingPid = Binder.getCallingPid();
+        String packageName = packageFromProcessId(context, callingPid);
+        if (packageName == null) {
+            packageName = firstPackageFromUserId(context, callingUid);
+        }
+        return packageName;
+    }
+
+    @Nullable
+    public static String getAndCheckCallingPackage(Context context, String suggestedPackageName) {
+        return getAndCheckCallingPackage(context, suggestedPackageName, 0);
+    }
+
+    @Nullable
+    public static String getAndCheckCallingPackage(Context context, int suggestedCallerUid) {
+        return getAndCheckCallingPackage(context, null, suggestedCallerUid);
+    }
+
+    @Nullable
+    public static String getAndCheckCallingPackage(Context context, String suggestedPackageName, int suggestedCallerUid) {
+        return getAndCheckCallingPackage(context, suggestedPackageName, suggestedCallerUid, 0);
+    }
+
+    @Nullable
+    public static String getAndCheckCallingPackage(Context context, String suggestedPackageName, int suggestedCallerUid, int suggestedCallerPid) {
+        int callingUid = Binder.getCallingUid(), callingPid = Binder.getCallingPid();
+        if (suggestedCallerUid > 0 && suggestedCallerUid != callingUid) {
+            throw new SecurityException("suggested UID [" + suggestedCallerUid + "] and real calling UID [" + callingUid + "] mismatch!");
+        }
+        if (suggestedCallerPid > 0 && suggestedCallerPid != callingPid) {
+            throw new SecurityException("suggested PID [" + suggestedCallerPid + "] and real calling PID [" + callingPid + "] mismatch!");
+        }
+        return getAndCheckPackage(context, suggestedPackageName, callingUid, Binder.getCallingPid());
+    }
+
+    @Nullable
+    public static String getAndCheckPackage(Context context, String suggestedPackageName, int callingUid) {
+        return getAndCheckPackage(context, suggestedPackageName, callingUid, 0);
+    }
+
+    @Nullable
+    public static String getAndCheckPackage(Context context, String suggestedPackageName, int callingUid, int callingPid) {
+        String packageName = packageFromProcessId(context, callingPid);
+        if (packageName == null) {
+            String[] packagesForUid = context.getPackageManager().getPackagesForUid(callingUid);
+            if (packagesForUid != null && packagesForUid.length != 0) {
+                if (packagesForUid.length == 1) {
+                    packageName = packagesForUid[0];
+                } else if (Arrays.asList(packagesForUid).contains(suggestedPackageName)) {
+                    packageName = suggestedPackageName;
+                } else {
+                    packageName = packagesForUid[0];
+                }
+            }
+        }
+        if (packageName != null && suggestedPackageName != null && !packageName.equals(suggestedPackageName)) {
+            throw new SecurityException("UID [" + callingUid + "] is not related to packageName [" + suggestedPackageName + "] (seems to be " + packageName + ")");
+        }
+        return packageName;
+    }
+
+    @Nullable
+    public static String packageFromProcessId(Context context, int pid) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        if (manager == null) return null;
+        if (pid <= 0) return null;
+        List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = manager.getRunningAppProcesses();
+        if (runningAppProcesses != null) {
+            for (ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+                if (processInfo.pid == pid) return processInfo.processName;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static String firstPackageFromUserId(Context context, int uid) {
+        String[] packagesForUid = context.getPackageManager().getPackagesForUid(uid);
+        if (packagesForUid != null && packagesForUid.length != 0) {
+            return packagesForUid[0];
         }
         return null;
     }

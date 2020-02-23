@@ -26,7 +26,7 @@ The latest build can be downloaded [here](https://www.nanolx.org/apk/GmsCore.apk
 
 License
 -------
-    Copyright 2014-2016 microG Project Team
+    Copyright 2013-2019 microG Project Team
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
