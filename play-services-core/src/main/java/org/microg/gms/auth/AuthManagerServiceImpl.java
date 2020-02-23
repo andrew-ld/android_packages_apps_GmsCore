@@ -17,12 +17,14 @@
 package org.microg.gms.auth;
 
 import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.util.Base64;
@@ -44,6 +46,7 @@ import java.util.List;
 import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static android.accounts.AccountManager.KEY_ACCOUNT_TYPE;
 import static android.accounts.AccountManager.KEY_AUTHTOKEN;
+import static android.accounts.AccountManager.KEY_CALLER_PID;
 import static org.microg.gms.auth.AskPermissionActivity.EXTRA_CONSENT_DATA;
 
 public class AuthManagerServiceImpl extends IAuthManagerService.Stub {
@@ -74,8 +77,7 @@ public class AuthManagerServiceImpl extends IAuthManagerService.Stub {
         String packageName = extras.getString(KEY_ANDROID_PACKAGE_NAME);
         if (packageName == null || packageName.isEmpty())
             packageName = extras.getString(KEY_CLIENT_PACKAGE_NAME);
-        int callerUid = extras.getInt(KEY_CALLER_UID, 0);
-        PackageUtils.checkPackageUid(context, packageName, callerUid, getCallingUid());
+        packageName = PackageUtils.getAndCheckCallingPackage(context, packageName, extras.getInt(KEY_CALLER_UID, 0), extras.getInt(KEY_CALLER_PID, 0));
         boolean notify = extras.getBoolean(KEY_HANDLE_NOTIFICATION, false);
 
         Log.d(TAG, "getToken: account:" + accountName + " scope:" + scope + " extras:" + extras + ", notify: " + notify);
@@ -163,10 +165,17 @@ public class AuthManagerServiceImpl extends IAuthManagerService.Stub {
     public Bundle clearToken(String token, Bundle extras) throws RemoteException {
         String packageName = extras.getString(KEY_ANDROID_PACKAGE_NAME);
         if (packageName == null) packageName = extras.getString(KEY_CLIENT_PACKAGE_NAME);
-        int callerUid = extras.getInt(KEY_CALLER_UID, 0);
-        PackageUtils.checkPackageUid(context, packageName, callerUid, getCallingUid());
+        packageName = PackageUtils.getAndCheckCallingPackage(context, packageName, extras.getInt(KEY_CALLER_UID, 0), extras.getInt(KEY_CALLER_PID, 0));
 
         Log.d(TAG, "clearToken: token:" + token + " extras:" + extras);
+        AccountManager.get(context).invalidateAuthToken(AuthConstants.DEFAULT_ACCOUNT_TYPE, token);
         return null;
+    }
+
+    @Override
+    public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+        if (super.onTransact(code, data, reply, flags)) return true;
+        Log.d(TAG, "onTransact [unknown]: " + code + ", " + data + ", " + flags);
+        return false;
     }
 }
